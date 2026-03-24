@@ -1,0 +1,198 @@
+# pysubstream
+
+> A Python library that simultaneously streams and captures subprocess stdout/stderr, powered by async I/O.
+
+pysubstream solves a fundamental limitation in Python's `subprocess` module: the inability to simultaneously **stream** output in real-time AND **capture** it for later inspection. It uses [anyio](https://anyio.readthedocs.io/) internally for concurrent I/O, but exposes a simple synchronous API.
+
+- Source: https://github.com/pmav99/pysubstream
+- Docs: https://pmav99.github.io/pysubstream
+- PyPI: https://pypi.org/project/pysubstream
+- License: MIT
+- Python: >= 3.11
+- Dependencies: anyio
+
+## Installation
+
+```
+pip install pysubstream
+```
+
+## API
+
+pysubstream exports two functions with identical signatures and behavior:
+
+- `pysubstream.run()` — synchronous
+- `pysubstream.async_run()` — async (awaitable)
+
+Both return `subprocess.CompletedProcess[str]`.
+
+### Function signature
+
+```python
+import pysubstream
+
+pysubstream.run(
+    cmd: str | bytes | Sequence[str | bytes],  # required, positional
+    *,
+    stdout: int | IO[str] | None = subprocess.PIPE,      # default: capture
+    stderr: int | IO[str] | None = subprocess.PIPE,      # default: capture
+    check: bool = False,                                   # raise on non-zero exit
+    timeout: float = 60,                                   # seconds
+    cwd: str | bytes | PathLike | None = None,
+    env: Mapping[str, str] | None = None,                 # replaces (not extends) os.environ
+    on_stdout: Callable[[str], Any] | None = sys.stdout.write,  # real-time callback
+    on_stderr: Callable[[str], Any] | None = sys.stderr.write,  # real-time callback
+    start_new_session: bool = False,
+    **kwargs,                                              # forwarded to anyio.open_process()
+) -> subprocess.CompletedProcess[str]
+```
+
+### Key differences from subprocess.run()
+
+| Behavior | subprocess.run() | pysubstream.run() |
+|---|---|---|
+| Default stdout/stderr | Not captured (None) | Captured (PIPE) |
+| Real-time streaming | Not possible when capturing | Enabled by default |
+| Separate stdout/stderr while streaming | Very difficult | Built-in |
+| Default timeout | None (waits forever) | 60 seconds |
+| Return type | CompletedProcess | CompletedProcess (identical) |
+| Exception types | CalledProcessError, TimeoutExpired | Same (identical) |
+
+### Exceptions
+
+| Exception | Raised when |
+|---|---|
+| `subprocess.CalledProcessError` | Non-zero exit code AND `check=True`. Has `.stdout`, `.stderr`, `.returncode`. |
+| `subprocess.TimeoutExpired` | Process exceeds `timeout` seconds. Has `.output`, `.stderr`. |
+
+## Patterns
+
+### Stream to console and capture (default)
+
+```python
+import pysubstream
+
+proc = pysubstream.run("echo hello; echo error >&2")
+# "hello\n" printed to console in real-time
+# "error\n" printed to stderr in real-time
+print(proc.stdout)      # "hello\n"
+print(proc.stderr)      # "error\n"
+print(proc.returncode)  # 0
+```
+
+### Capture silently (no console output)
+
+```python
+proc = pysubstream.run("echo hello; echo error >&2", on_stdout=None, on_stderr=None)
+assert proc.stdout == "hello\n"   # captured
+assert proc.stderr == "error\n"   # captured
+# Nothing printed to console
+```
+
+### Custom callbacks for real-time processing
+
+```python
+lines = []
+proc = pysubstream.run("echo hello", on_stdout=lines.append)
+assert lines == ["hello\n"]
+assert proc.stdout == "hello\n"  # always captured regardless of callback
+```
+
+### Error handling with check=True
+
+```python
+import subprocess
+import pysubstream
+
+try:
+    pysubstream.run("exit 1", check=True)
+except subprocess.CalledProcessError as exc:
+    print(exc.returncode)  # 1
+    print(exc.stdout)       # ""
+    print(exc.stderr)       # ""
+```
+
+### Timeout handling
+
+```python
+import subprocess
+import pysubstream
+
+try:
+    pysubstream.run("sleep 60", timeout=5)
+except subprocess.TimeoutExpired as exc:
+    print(exc.timeout)  # 5
+```
+
+### Merge stderr into stdout
+
+```python
+import subprocess
+import pysubstream
+
+proc = pysubstream.run("echo out; echo err >&2", stderr=subprocess.STDOUT)
+assert proc.stdout == "out\nerr\n"  # both streams merged
+assert proc.stderr == ""
+```
+
+### Redirect to file
+
+```python
+with open("output.txt", "w") as f:
+    proc = pysubstream.run("echo hello", stdout=f)
+assert proc.stdout == ""  # not captured when redirected
+```
+
+### Discard output entirely
+
+```python
+import subprocess
+import pysubstream
+
+proc = pysubstream.run("echo hello", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+assert proc.stdout == ""
+assert proc.stderr == ""
+```
+
+### Set working directory and environment
+
+```python
+proc = pysubstream.run("pwd", cwd="/tmp")
+assert "/tmp" in proc.stdout
+
+# env REPLACES os.environ, does not extend it
+proc = pysubstream.run("env", env={"MY_VAR": "hello"})
+assert "MY_VAR=hello" in proc.stdout
+```
+
+### Command as list (no shell, safer)
+
+```python
+proc = pysubstream.run(["echo", "hello"])  # no shell involved
+assert proc.stdout == "hello\n"
+```
+
+### Async usage
+
+```python
+import pysubstream
+
+async def main():
+    result = await pysubstream.async_run(["echo", "hello"])
+    assert result.stdout.strip() == "hello"
+
+    # With custom callback
+    lines = []
+    result = await pysubstream.async_run("echo hello", on_stdout=lines.append)
+    assert lines == ["hello\n"]
+```
+
+## Gotchas
+
+- `env` **replaces** the entire environment. It does NOT extend `os.environ`. To add a variable: `env={**os.environ, "MY_VAR": "value"}`.
+- When `stdout`/`stderr` are redirected to **file objects**, callbacks (`on_stdout`/`on_stderr`) have no effect and `CompletedProcess` returns empty strings for those streams.
+- `on_stdout`/`on_stderr` default to echoing to the console. Pass `None` to silence them.
+- String commands (`"echo hello"`) run via the shell (`/bin/sh`). Sequence commands (`["echo", "hello"]`) run directly without a shell.
+- The default timeout is **60 seconds**, unlike `subprocess.run()` which waits forever.
+- Output is always text (`str`), never bytes. There is no binary mode.
+- `run()` cannot be called from within an already-running async event loop (it calls `anyio.run()` internally). Use `async_run()` in async contexts.

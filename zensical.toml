@@ -1,0 +1,129 @@
+[project]
+site_name = "pysubstream"
+site_url = "https://pmav99.github.io/pysubstream"
+site_description = "A subprocess wrapper that simultaneously streams and captures stdout/stderr"
+repo_url = "https://github.com/pmav99/pysubstream"
+repo_name = "pmav99/pysubstream"
+use_directory_urls = false
+
+nav = [
+  { "Overview" = "index.md" },
+  { "Installation" = "installation.md" },
+  { "Cookbook" = "cookbook.md" },
+  { "API" = "api.md" },
+]
+
+[project.theme]
+variant = "modern"
+
+features = [
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.footer",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "content.action.edit",
+  "content.action.view",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "blue"
+accent = "blue"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "blue"
+accent = "blue"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+# Markdown extensions
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.tilde]
+[project.markdown_extensions.pymdownx.highlight]
+[project.markdown_extensions.pymdownx.inlinehilite]
+
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+
+[project.markdown_extensions.toc]
+permalink = true
+
+# Plugins
+[project.plugins.search]
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src"]
+inventories = [
+  "https://docs.python.org/3/objects.inv",
+  "https://anyio.readthedocs.org/en/stable/objects.inv",
+]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+# General
+allow_inspection = true
+show_bases = true
+show_source = true
+
+# Headings
+heading_level = 2
+show_root_heading = true
+show_root_toc_entry = true
+show_root_full_path = true
+show_root_members_full_path = false
+show_object_full_path = false
+show_category_heading = false
+show_symbol_type_heading = true
+show_symbol_type_toc = true
+
+# Members
+inherited_members = false
+members_order = "alphabetical"
+filters = ["!^_[^_]"]
+group_by_category = true
+show_submodules = false
+summary = true
+
+# Docstrings
+docstring_style = "google"
+docstring_section_style = "spacy"
+merge_init_into_class = false
+show_if_no_docstring = true
+show_docstring_attributes = true
+show_docstring_functions = true
+show_docstring_classes = true
+show_docstring_modules = true
+show_docstring_description = true
+show_docstring_examples = true
+show_docstring_other_parameters = true
+show_docstring_parameters = true
+show_docstring_raises = true
+show_docstring_receives = true
+show_docstring_returns = true
+show_docstring_warns = true
+show_docstring_yields = true
+
+# Signature/annotations
+annotations_path = "full"
+line_length = 80
+show_signature = true
+show_signature_annotations = true
+signature_crossrefs = true
+separate_signature = true
+unwrap_annotated = true
+
+[project.plugins.mkdocstrings.handlers.python.options.docstring_options]
+ignore_init_summary = false
+returns_multiple_items = true
+returns_named_value = true
+returns_type_in_property_summary = false
+trim_doctest_flags = true
+warn_unknown_params = true

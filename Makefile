@@ -8,24 +8,24 @@ init:
 	pre-commit install
 
 style:
-	pre-commit run black -a
+	pre-commit run ruff-format -a
 
 lint:
-	pre-commit run ruff -a
+	pre-commit run ruff-check -a
 
 mypy:
-	dmypy run anysub
+	dmypy run src/pysubstream
 
 test:
 	python -m pytest -vlx --durations=10 --durations-min=0.1
 
 cov:
 	coverage erase
-	COVERAGE_PROCESS_START=.coveragerc pytest --cov --cov-report term-missing --durations=10 --durations-min=0.1
+	COVERAGE_PROCESS_START=.coveragerc pytest --cov=pysubstream --cov-report term-missing --durations=10 --durations-min=0.1
 
 docs:
-	mkdocs serve
+	zensical serve -o
 
 deps:
-	pre-commit run poetry-lock -a
+	pre-commit run poetry-check -a
 	pre-commit run poetry-export -a

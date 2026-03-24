@@ -3,9 +3,10 @@
 ### PyPI
 
 ```
-python -m pip install anysub
+pip install pysubstream
 ```
 
-### conda
+### Requirements
 
-not yet
+- Python >= 3.11
+- [anyio](https://anyio.readthedocs.io/) (installed automatically)

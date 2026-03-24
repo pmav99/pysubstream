@@ -1,32 +1,34 @@
-[tool.poetry]
-name = "anysub"
+[project]
+name = "pysubstream"
 version = "0.0.1"
-description = "subprocess based on async/anyio"
-authors = ["Panos Mavrogiorgos <pmav99@gmail.com>"]
+description = "subprocess.run() that streams and captures stdout/stderr simultaneously"
 readme = "README.md"
-packages = [
-    { include = "anysub", from = "src" },
+requires-python = ">=3.11"
+authors = [
+    { name = "Panos Mavrogiorgos", email = "pmav99@gmail.com" },
+]
+dependencies = [
+    "anyio[trio]",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9, <4.0"
-anyio = {version = "*", extras = ["trio"]}
+[tool.poetry]
+packages = [
+    { include = "pysubstream", from = "src" },
+]
 
-[tool.poetry.group.dev.dependencies]
-ipdb = "*"
-mypy = "*"
-pytest = "*"
-pytest-cov = "*"
-
-[tool.poetry.group.docs.dependencies]
-mkdocs = "*"
-mkdocs-material = "*"
-mkdocstrings = "*"
-mkdocstrings-python = "*"
-pymdown-extensions = "*"
-black = "*"
-mkdocs-gen-files = "*"
-mike = "*"
+[dependency-groups]
+dev = [
+    "anyio",
+    "ipdb",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+]
+docs = [
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "zensical",
+]
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -56,7 +58,7 @@ filterwarnings = [
 
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.11"
 plugins = []
 show_column_numbers = true
 show_error_context = true
@@ -91,25 +93,19 @@ enable_error_code = [
 module = "tests.*"
 disallow_untyped_defs = true
 
-[tool.pydantic-mypy]
-init_forbid_extra = true
-init_typed = true
-warn_required_dynamic_aliases = true
-warn_untyped_fields = true
-
 [tool.black]
-target-version = ["py39"]
+target-version = ["py311"]
 line-length = 120
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py311"
 line-length = 120
 lint.select = [
   "ARG",  # flake8-unused-argument
   "B",  # flake8-bugbear
   "C4",  # flake8-comprehensions
   "C90",  # mccabe
-  "COM",  # flake8-commas
+  # "COM",  # flake8-commas — conflicts with ruff formatter
   # "D",  # pydocstyle
   "DTZ",  # flake8-datetimez
   "E",  # pycodestyle
@@ -118,7 +114,7 @@ lint.select = [
   "FBT",  # flake8-boolean-trap
   "F",  # pyflakes
   "ICN",  # flake8-import-conventions
-  # "I",  # isort
+  "I",  # isort
   "ISC",  # flake8-implicit-str-concat
   "N",  # pep8-naming
   "PL",  # Pylint
@@ -126,7 +122,7 @@ lint.select = [
   "RUF",  # Unused noqa
   "S",  # flake8-bandit
   "TID",  # flake8-tidy-imports
-  "T",  # pyupgrade
+  "T",  # flake8-print
   "T10",  # flake8-debugger
   "UP",  # pyupgrade
   "W",  # Warning
@@ -136,11 +132,14 @@ lint.ignore = [
   "N812",  # lowercase-imported-as-non-lowercase
   "PLR0913",  # too-many-arguments
   "S101",  # assert
-  "F401",  # Unused imports; Let pyright report this
+  "PLC0415",  # import-outside-top-level (intentional deferred imports)
 ]
-lint.unfixable = [
-  "F401",  # Don't touch unused imports
+lint.per-file-ignores."__init__.py" = [
+  "F401",  # Unused imports (re-exports)
 ]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
 
 [tool.codespell]
 skip = '*.po,*.ts,*.lock'

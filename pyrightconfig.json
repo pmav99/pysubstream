@@ -1,0 +1,9 @@
+{
+  "typeCheckingMode": "all",
+  "allowedUntypedLibraries": [],
+  "executionEnvironments": [
+    {
+      "root": "**/tests"
+    }
+  ]
+}

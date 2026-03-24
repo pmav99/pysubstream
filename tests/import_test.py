@@ -4,12 +4,12 @@ import importlib.metadata
 
 
 def test_import():
-    import anysub
+    import pysubstream
 
-    del anysub
+    del pysubstream
 
 
 def test_version():
-    import anysub
+    import pysubstream
 
-    assert anysub.__version__ == importlib.metadata.version("anysub")
+    assert pysubstream.__version__ == importlib.metadata.version("pysubstream")

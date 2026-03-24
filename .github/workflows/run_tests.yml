@@ -20,6 +20,13 @@ on:
       - "poetry.lock"
       - "requirements/requirements*.txt"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: "test-${{ github.head_ref || github.run_id }}"
+  cancel-in-progress: true
+
 jobs:
   test:
     name: "test Python ${{ matrix.python }} on ${{ matrix.os }}"
@@ -28,32 +35,22 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python: ["3.9", "3.10", "3.11"] #, "3.12"]
+        python: ["3.11", "3.12", "3.13", "3.14"]
         include:
           - os: "macos-latest"
-            python: "3.10"
-          # - os: "windows-latest"
-          #   python-version: "3.10"
+            python: "3.13"
     defaults:
       run:
         shell: "bash -eo pipefail {0}"
 
     steps:
-      - uses: "actions/checkout@main"
-      - uses: "actions/setup-python@main"
+      - uses: "actions/checkout@v4"
+      - uses: "actions/setup-python@v5"
         with:
           python-version: "${{ matrix.python }}"
-      - uses: "actions/cache@main"
-        id: "cache"
-        with:
-          path: "${{ env.pythonLocation }}"
-          key: "test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'requirements/*') }}"
-      - run: "python3 --version"
-      - run: "python3 -mpip --version"
+          cache: "pip"
+          cache-dependency-path: "requirements/requirements*.txt"
       - run: "python3 -mpip install -r requirements/requirements.txt -r requirements/requirements-dev.txt"
       - run: "python3 -mpip install ./"
-      - run: "python3 -mpip cache info"
-      - run: "python3 -mpip freeze"
-      - run: "python3 -mpytest --version"
-      - run: "mypy multifutures"
+      - run: "mypy src/pysubstream"
       - run: "make cov"
